@@ -6,6 +6,7 @@ import { MeshStandardMaterial, Vector3 } from 'three';
 import Dropzone from 'react-dropzone';
 import dayjs from 'dayjs';
 import emailjs from 'emailjs-com';
+import { Widget } from '@uploadcare/react-widget';
 
 const MARKUP = 0.2;
 const MATERIAL_COST = { PLA: 0.05, ABS: 0.07, PETG: 0.10 };
@@ -123,14 +124,19 @@ export default function StlPriceCalculator() {
   return (
     <div className="p-4 space-y-6">
       <h2 className="text-2xl font-bold">3D Print Cost & Order Form</h2>
-      <Dropzone onDrop={accepted => { if(accepted[0]){ setFileObj(accepted[0]); setFileUrl(URL.createObjectURL(accepted[0])); }}} accept=".stl,.STL" multiple={false}>
-        {({getRootProps,getInputProps}) => (
-          <div {...getRootProps()} className="border-2 border-dashed p-8 text-center cursor-pointer">
-            <input {...getInputProps()} />
-            {fileUrl ? 'STL uploaded. Upload another?' : 'Drag & drop STL file here, or click to select'}
-          </div>
-        )}
-      </Dropzone>
+      <Widget
+  publicKey="YOUR_UPLOADCARE_PUBLIC_KEY"
+  onChange={file => {
+    if (file && file.cdnUrl) {
+      setFileUrl(file.cdnUrl);
+      setFileUuid(file.uuid);
+    }
+  }}
+  clearable
+  previewStep
+  multiple={false}
+  inputAcceptTypes=".stl"
+/>
       {fileUrl && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="h-96 bg-gray-100">
