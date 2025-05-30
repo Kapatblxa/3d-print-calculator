@@ -123,7 +123,7 @@ export default function StlPriceCalculator() {
   return (
     <div className="p-4 space-y-6">
       <h2 className="text-2xl font-bold">3D Print Cost & Order Form</h2>
-      <Dropzone onDrop={accepted => { if(accepted[0]){ setFileObj(accepted[0]); setFileUrl(URL.createObjectURL(accepted[0])); }}} accept={{'model/stl':['.stl']}} multiple={false}>
+      <Dropzone onDrop={accepted => { if(accepted[0]){ setFileObj(accepted[0]); setFileUrl(URL.createObjectURL(accepted[0])); }}} accept=".stl,.STL" multiple={false}>
         {({getRootProps,getInputProps}) => (
           <div {...getRootProps()} className="border-2 border-dashed p-8 text-center cursor-pointer">
             <input {...getInputProps()} />
