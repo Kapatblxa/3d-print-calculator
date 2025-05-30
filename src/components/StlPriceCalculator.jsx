@@ -124,9 +124,9 @@ export default function StlPriceCalculator() {
 </div>
 
         {fileUrl && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
             {/* Preview + Comments */}
-            <div className="space-y-4">
+            <div className="flex flex-col justify-between h-full">
               <div className="h-96 bg-gray-50 rounded overflow-hidden">
                 <Canvas>
                   <ambientLight intensity={0.6} />
@@ -139,11 +139,20 @@ export default function StlPriceCalculator() {
                   <OrbitControls makeDefault enablePan enableZoom />
                 </Canvas>
               </div>
-              <div>
+              <div className="flex-grow flex flex-col justify-end">
                 <label className="block font-medium">Comments:</label>
                 <textarea
                   value={comment}
-                  onChange={e=>setComment(e.target.value)}
+                  onChange={e => setComment(e.target.value)}
+                  className="w-full p-2 border rounded h-full"
+                  placeholder="Add any special instructions..."
+                />
+              </div>
+            </div>
+
+            {/* Parameters + Order */}
+            <div className="space-y-4">
+              {/* ... rest unchanged ... */}}
                   className="w-full p-2 border rounded"
                   rows={4}
                   placeholder="Add any special instructions..."
