@@ -60,11 +60,7 @@ export default function StlPriceCalculator() {
 
   useEffect(() => {
     if (!fileUrl) {
-      setVolume(0);
-      setWeight(0);
-      setPrintTime(0);
-      setDueDate(null);
-      setUnitPrice(0);
+      setVolume(0); setWeight(0); setPrintTime(0); setDueDate(null); setUnitPrice(0);
       return;
     }
     const loader = new STLLoader();
@@ -89,158 +85,126 @@ export default function StlPriceCalculator() {
       },
       undefined,
       () => {
-        setVolume(0);
-        setWeight(0);
-        setPrintTime(0);
-        setDueDate(null);
-        setUnitPrice(0);
+        setVolume(0); setWeight(0); setPrintTime(0); setDueDate(null); setUnitPrice(0);
       }
     );
   }, [fileUrl, material, technology, infill, layerHeight]);
 
-  const handleOrder = async () => {
-    if (!fileUuid) {
-      alert('Please upload an STL file first.');
-      return;
-    }
+  const handleOrder = () => {
+    if (!fileUuid) return alert('Please upload an STL file first.');
     setSending(true);
     const totalPrice = (unitPrice * quantity).toFixed(2);
-
     const payload = {
-      file_url: fileUrl,
-      file_uuid: fileUuid,
-      material,
-      technology,
-      infill: `${infill}%`,
-      layer_height: `${layerHeight} mm`,
-      color,
-      quantity,
-      volume: `${volume.toFixed(2)} cm³`,
-      weight: `${(weight * quantity).toFixed(1)} g`,
-      print_time: `${(printTime * quantity).toFixed(1)} h`,
-      due_date: dueDate,
-      unit_price: `€ ${unitPrice}`,
-      total_price: `€ ${totalPrice}`,
-      comment
+      file_url: fileUrl, file_uuid: fileUuid, material, technology,
+      infill: `${infill}%`, layer_height: `${layerHeight} mm`, color,
+      quantity, volume: `${volume.toFixed(2)} cm³`, weight: `${(weight*quantity).toFixed(1)} g`,
+      print_time: `${(printTime*quantity).toFixed(1)} h`, due_date: dueDate,
+      unit_price: `€ ${unitPrice}`, total_price: `€ ${totalPrice}`, comment
     };
-
-    try {
-      const res = await fetch('https://your-server.com/api/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const json = await res.json();
-      alert(json.message || 'Order sent');
-    } catch (err) {
-      alert('Error: ' + err);
-    } finally {
-      setSending(false);
-    }
+    fetch('https://your-server.com/api/order', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+      .then(r=>r.json()).then(j=>alert(j.message||'Order sent')).catch(e=>alert('Error:'+e)).finally(()=>setSending(false));
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-bold">3D Print Cost & Order Form</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="p-6 w-full max-w-5xl bg-white rounded shadow space-y-6">
+        <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
 
-      {/* Uploadcare Widget */}
-      <Widget
-  publicKey="8368b626f62009725d30"
-  tabs="file url"
-  clearable
-  multiple={false}
-  onChange={fileInfo => {
-   // fileInfo приходит после полной загрузки
-   setFileUrl(fileInfo.cdnUrl);
-   setFileUuid(fileInfo.uuid);
- }}
-/>
+        <Widget
+          publicKey="8368b626f62009725d30"
+          tabs="file url"
+          clearable
+          multiple={false}
+          onChange={fileInfo => {
+            setFileUrl(fileInfo.cdnUrl);
+            setFileUuid(fileInfo.uuid);
+          }}
+        />
 
-      {/* Preview and form after upload */}
-      {fileUrl && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="h-96 bg-gray-100">
-            <Canvas>
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[0, 10, 10]} intensity={1} />
-              <React.Suspense fallback={<Loader />}>
-                <Bounds fit clip margin={1.2}>
-                  <Model url={fileUrl} color={color} />
-                </Bounds>
-              </React.Suspense>
-              <OrbitControls makeDefault enablePan enableZoom />
-            </Canvas>
+        {fileUrl && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Preview + Comments */}
+            <div className="space-y-4">
+              <div className="h-96 bg-gray-50 rounded overflow-hidden">
+                <Canvas>
+                  <ambientLight intensity={0.6} />
+                  <directionalLight position={[0, 10, 10]} intensity={1} />
+                  <React.Suspense fallback={<Loader />}>
+                    <Bounds fit clip margin={1.2}>
+                      <Model url={fileUrl} color={color} />
+                    </Bounds>
+                  </React.Suspense>
+                  <OrbitControls makeDefault enablePan enableZoom />
+                </Canvas>
+              </div>
+              <div>
+                <label className="block font-medium">Comments:</label>
+                <textarea
+                  value={comment}
+                  onChange={e=>setComment(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  rows={4}
+                  placeholder="Add any special instructions..."
+                />
+              </div>
+            </div>
+
+            {/* Parameters + Order */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-medium">Material:</label>
+                  <select value={material} onChange={e=>setMaterial(e.target.value)} className="w-full p-2 border rounded">
+                    {Object.keys(MATERIAL_COST).map(m=><option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-medium">Technology:</label>
+                  <select value={technology} onChange={e=>setTechnology(e.target.value)} className="w-full p-2 border rounded">
+                    {Object.keys(TECHNOLOGY_COST).map(t=><option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-medium">Infill (%):</label>
+                  <select value={infill} onChange={e=>setInfill(Number(e.target.value))} className="w-full p-2 border rounded">
+                    {INFILL_OPTIONS.map(i=><option key={i} value={i}>{i}%</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-medium">Layer Height (mm):</label>
+                  <select value={layerHeight} onChange={e=>setLayerHeight(Number(e.target.value))} className="w-full p-2 border rounded">
+                    {LAYER_HEIGHT_OPTIONS.map(lh=><option key={lh} value={lh}>{lh} mm</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-medium">Color:</label>
+                <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-16 h-10 border rounded" />
+              </div>
+
+              <div className="bg-white p-4 rounded shadow space-y-2">
+                <h3 className="font-semibold">Print & Cost Details</h3>
+                <p>Volume: {volume.toFixed(2)} cm³</p>
+                <p>Weight: {weight.toFixed(1)} g</p>
+                <p>Print Time: {printTime.toFixed(1)} h</p>
+                {dueDate && <p>Estimated Completion: {dueDate}</p>}
+                <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
+              </div>
+
+              <div>
+                <label className="block font-medium">Quantity:</label>
+                <input type="number" min="1" value={quantity} onChange={e=>setQuantity(Number(e.target.value))} className="w-full p-2 border rounded" />
+                <p className="text-sm text-gray-600 mt-1">If you order more than 3 items, expect a discount</p>
+              </div>
+
+              <button onClick={handleOrder} disabled={sending} className="mt-4 w-full bg-blue-600 text-white p-3 rounded shadow">
+                {sending ? 'Sending Order...' : 'Place Order'}
+              </button>
+            </div>
           </div>
-
-          <div className="space-y-4">
-            {/* Parameters */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Material */}
-              <div>
-                <label>Material:</label>
-                <select value={material} onChange={e => setMaterial(e.target.value)} className="w-full p-2 border rounded">
-                  {Object.keys(MATERIAL_COST).map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
-              {/* Technology */}
-              <div>
-                <label>Technology:</label>
-                <select value={technology} onChange={e => setTechnology(e.target.value)} className="w-full p-2 border rounded">
-                  {Object.keys(TECHNOLOGY_COST).map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              {/* Infill */}
-              <div>
-                <label>Infill (%):</label>
-                <select value={infill} onChange={e => setInfill(Number(e.target.value))} className="w-full p-2 border rounded">
-                  {INFILL_OPTIONS.map(i => <option key={i} value={i}>{i}%</option>)}
-                </select>
-              </div>
-              {/* Layer Height */}
-              <div>
-                <label>Layer Height (mm):</label>
-                <select value={layerHeight} onChange={e => setLayerHeight(Number(e.target.value))} className="w-full p-2 border rounded">
-                  {LAYER_HEIGHT_OPTIONS.map(lh => <option key={lh} value={lh}>{lh} mm</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Color picker */}
-            <div>
-              <label>Color:</label>
-              <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-16 h-10 border rounded" />
-            </div>
-
-            {/* Costs Details */}
-            <div className="bg-white p-4 rounded shadow space-y-2">
-              <h3 className="font-semibold">Print & Cost Details</h3>
-              <p>Volume: {volume.toFixed(2)} cm³</p>
-              <p>Weight: {weight.toFixed(1)} g</p>
-              <p>Print Time: {printTime.toFixed(1)} h</p>
-              {dueDate && <p>Estimated Completion: {dueDate}</p>}
-              <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
-            </div>
-
-            {/* Quantity */}
-            <div>
-              <label>Quantity:</label>
-              <input type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="w-full p-2 border rounded" />
-              <p className="text-sm text-gray-600 mt-1">If you order more than 3 items, expect a discount</p>
-            </div>
-
-            {/* Comments */}
-            <div>
-              <label>Comments:</label>
-              <textarea value={comment} onChange={e => setComment(e.target.value)} className="w-full p-2 border rounded" rows={4} placeholder="Add any special instructions..." />
-            </div>
-
-            {/* Submit */}
-            <button onClick={handleOrder} disabled={sending} className="mt-4 w-full bg-blue-600 text-white p-3 rounded shadow">
-              {sending ? 'Sending Order...' : 'Place Order'}
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
