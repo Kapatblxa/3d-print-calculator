@@ -125,17 +125,24 @@ export default function StlPriceCalculator() {
     <div className="p-4 space-y-6">
       <h2 className="text-2xl font-bold">3D Print Cost & Order Form</h2>
       <Widget
-  publicKey="8368b626f62009725d30"
+  publicKey="ВАШ_PUBLIC_KEY"
+  /* Разрешаем не только изображения */
+  imagesOnly={false}
+  /* Фильтр по расширению */
+  inputAcceptTypes=".stl"
+  /* Дополнительно: валидатор именно по расширению */
+  validators={['extension:stl']}
+  /* Убираем previewStep (работает только для изображений) */
+  clearable
+  multiple={false}
+  /* Открываем сразу вкладку загрузки файлов */
+  tabs="file url"
   onChange={file => {
     if (file && file.cdnUrl) {
       setFileUrl(file.cdnUrl);
       setFileUuid(file.uuid);
     }
   }}
-  clearable
-  previewStep
-  multiple={false}
-  inputAcceptTypes=".stl"
 />
       {fileUrl && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
