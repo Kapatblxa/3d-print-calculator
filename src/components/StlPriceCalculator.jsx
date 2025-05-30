@@ -150,10 +150,10 @@ export default function StlPriceCalculator() {
   clearable
   multiple={false}
   onChange={fileInfo => {
-+   // fileInfo приходит после полной загрузки
-+   setFileUrl(fileInfo.cdnUrl);
-+   setFileUuid(fileInfo.uuid);
-+ }}
+   // fileInfo приходит после полной загрузки
+   setFileUrl(fileInfo.cdnUrl);
+   setFileUuid(fileInfo.uuid);
+ }}
 />
 
       {/* Preview and form after upload */}
