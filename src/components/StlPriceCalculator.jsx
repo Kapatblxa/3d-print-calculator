@@ -167,7 +167,7 @@ export default function StlPriceCalculator() {
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="w-full p-2 border rounded h-40"
+                  className="w-full p-2 border rounded flex-grow"
                   placeholder="Add any special instructions..."
                 />
               </div>
