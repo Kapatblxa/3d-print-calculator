@@ -6,7 +6,6 @@ import { MeshStandardMaterial, Vector3 } from 'three';
 import dayjs from 'dayjs';
 import { Widget } from '@uploadcare/react-widget';
 
-
 // Pricing parameters
 const MARKUP = 0.2;
 const MATERIAL_COST = { PLA: 0.05, ABS: 0.07, PETG: 0.10 };
@@ -147,9 +146,7 @@ export default function StlPriceCalculator() {
       {/* Uploadcare Widget */}
       <Widget
   publicKey="8368b626f62009725d30"
-  imagesOnly={false}
-  inputAcceptTypes=".stl"
-  validators={['extension:stl']}
+  tabs="file url"
   clearable
   multiple={false}
   onUploadComplete={fileInfo => {
