@@ -125,7 +125,7 @@ export default function StlPriceCalculator() {
     <div className="p-4 space-y-6">
       <h2 className="text-2xl font-bold">3D Print Cost & Order Form</h2>
       <Widget
-  publicKey="YOUR_UPLOADCARE_PUBLIC_KEY"
+  publicKey="8368b626f62009725d30"
   onChange={file => {
     if (file && file.cdnUrl) {
       setFileUrl(file.cdnUrl);
