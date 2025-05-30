@@ -2,15 +2,16 @@
   "name": "stl-calculator",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {
+ "dependencies": {
     "@react-three/drei": "^9.29.3",
     "@react-three/fiber": "^8.13.5",
     "dayjs": "^1.11.7",
     "emailjs-com": "^3.2.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-dropzone": "^11.4.2",
-    "three": "^0.143.0"
+    "three": "^0.143.0",
+    "react-scripts": "5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
