@@ -110,16 +110,18 @@ export default function StlPriceCalculator() {
       <div className="p-6 w-full max-w-5xl bg-white rounded shadow space-y-6">
         <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
 
-        <Widget
-          publicKey="8368b626f62009725d30"
-          tabs="file url"
-          clearable
-          multiple={false}
-          onChange={fileInfo => {
-            setFileUrl(fileInfo.cdnUrl);
-            setFileUuid(fileInfo.uuid);
-          }}
-        />
+        <div className="flex flex-col items-center">
+  <Widget
+    publicKey="8368b626f62009725d30"
+    tabs="file url"
+    clearable
+    multiple={false}
+    onChange={fileInfo => {
+      setFileUrl(fileInfo.cdnUrl);
+      setFileUuid(fileInfo.uuid);
+    }}
+  />
+</div>
 
         {fileUrl && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
