@@ -11,8 +11,8 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^11.4.2",
     "three": "^0.159.0",
-    "@uploadcare/react-widget": "^3.2.1",
-   "react-scripts": "5.0.1"
+    "@uploadcare/react-widget": "^2.4.7",
+"react-scripts": "5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
