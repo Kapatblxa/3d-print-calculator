@@ -60,7 +60,11 @@ export default function StlPriceCalculator() {
 
   useEffect(() => {
     if (!fileUrl) {
-      setVolume(0); setWeight(0); setPrintTime(0); setDueDate(null); setUnitPrice(0);
+      setVolume(0);
+      setWeight(0);
+      setPrintTime(0);
+      setDueDate(null);
+      setUnitPrice(0);
       return;
     }
     const loader = new STLLoader();
@@ -81,51 +85,72 @@ export default function StlPriceCalculator() {
 
         const infillFactor = 0.8 + 0.2 * (infill / 100);
         const finalPrice = priceFull * infillFactor;
-        setUnitPrice(Number(finalPrice).toFixed(2));
+        setUnitPrice(finalPrice.toFixed(2));
       },
       undefined,
       () => {
-        setVolume(0); setWeight(0); setPrintTime(0); setDueDate(null); setUnitPrice(0);
+        setVolume(0);
+        setWeight(0);
+        setPrintTime(0);
+        setDueDate(null);
+        setUnitPrice(0);
       }
     );
   }, [fileUrl, material, technology, infill, layerHeight]);
 
   const handleOrder = () => {
-    if (!fileUuid) return alert('Please upload an STL file first.');
+    if (!fileUuid) {
+      alert('Please upload an STL file first.');
+      return;
+    }
     setSending(true);
     const totalPrice = (unitPrice * quantity).toFixed(2);
     const payload = {
-      file_url: fileUrl, file_uuid: fileUuid, material, technology,
-      infill: `${infill}%`, layer_height: `${layerHeight} mm`, color,
-      quantity, volume: `${volume.toFixed(2)} cm³`, weight: `${(weight*quantity).toFixed(1)} g`,
-      print_time: `${(printTime*quantity).toFixed(1)} h`, due_date: dueDate,
-      unit_price: `€ ${unitPrice}`, total_price: `€ ${totalPrice}`, comment
+      file_url: fileUrl,
+      file_uuid: fileUuid,
+      material,
+      technology,
+      infill: `${infill}%`,
+      layer_height: `${layerHeight} mm`,
+      color,
+      quantity,
+      volume: `${volume.toFixed(2)} cm³`,
+      weight: `${(weight * quantity).toFixed(1)} g`,
+      print_time: `${(printTime * quantity).toFixed(1)} h`,
+      due_date: dueDate,
+      unit_price: `€ ${unitPrice}`,
+      total_price: `€ ${totalPrice}`,
+      comment,
     };
-    fetch('https://your-server.com/api/order', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-      .then(r=>r.json()).then(j=>alert(j.message||'Order sent')).catch(e=>alert('Error:'+e)).finally(()=>setSending(false));
+    fetch('https://your-server.com/api/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => alert(data.message || 'Order sent'))
+      .catch((err) => alert('Error: ' + err))
+      .finally(() => setSending(false));
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="p-6 w-full max-w-5xl bg-white rounded shadow space-y-6">
         <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
-
         <div className="flex flex-col items-center">
-  <Widget
-    publicKey="8368b626f62009725d30"
-    tabs="file url"
-    clearable
-    multiple={false}
-    onChange={fileInfo => {
-      setFileUrl(fileInfo.cdnUrl);
-      setFileUuid(fileInfo.uuid);
-    }}
-  />
-</div>
-
+          <Widget
+            publicKey="8368b626f62009725d30"
+            tabs="file url"
+            clearable
+            multiple={false}
+            onChange={(fileInfo) => {
+              setFileUrl(fileInfo.cdnUrl);
+              setFileUuid(fileInfo.uuid);
+            }}
+          />
+        </div>
         {fileUrl && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-            {/* Preview + Comments */}
             <div className="flex flex-col justify-between h-full">
               <div className="h-96 bg-gray-50 rounded overflow-hidden">
                 <Canvas>
@@ -143,57 +168,81 @@ export default function StlPriceCalculator() {
                 <label className="block font-medium">Comments:</label>
                 <textarea
                   value={comment}
-                  onChange={e => setComment(e.target.value)}
+                  onChange={(e) => setComment(e.target.value)}
                   className="w-full p-2 border rounded h-full"
                   placeholder="Add any special instructions..."
                 />
               </div>
             </div>
-
-            {/* Parameters + Order */}
             <div className="space-y-4">
-              {/* ... rest unchanged ... */}}
-                  className="w-full p-2 border rounded"
-                  rows={4}
-                  placeholder="Add any special instructions..."
-                />
-              </div>
-            </div>
-
-            {/* Parameters + Order */}
-            <div className="space-y-4">
+              {/* Parameters and order section unchanged */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-medium">Material:</label>
-                  <select value={material} onChange={e=>setMaterial(e.target.value)} className="w-full p-2 border rounded">
-                    {Object.keys(MATERIAL_COST).map(m=><option key={m} value={m}>{m}</option>)}
+                  <select
+                    value={material}
+                    onChange={(e) => setMaterial(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  >
+                    {Object.keys(MATERIAL_COST).map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block font-medium">Technology:</label>
-                  <select value={technology} onChange={e=>setTechnology(e.target.value)} className="w-full p-2 border rounded">
-                    {Object.keys(TECHNOLOGY_COST).map(t=><option key={t} value={t}>{t}</option>)}
+                  <select
+                    value={technology}
+                    onChange={(e) => setTechnology(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  >
+                    {Object.keys(TECHNOLOGY_COST).map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block font-medium">Infill (%):</label>
-                  <select value={infill} onChange={e=>setInfill(Number(e.target.value))} className="w-full p-2 border rounded">
-                    {INFILL_OPTIONS.map(i=><option key={i} value={i}>{i}%</option>)}
+                  <select
+                    value={infill}
+                    onChange={(e) => setInfill(Number(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  >
+                    {INFILL_OPTIONS.map((i) => (
+                      <option key={i} value={i}>
+                        {i}%
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block font-medium">Layer Height (mm):</label>
-                  <select value={layerHeight} onChange={e=>setLayerHeight(Number(e.target.value))} className="w-full p-2 border rounded">
-                    {LAYER_HEIGHT_OPTIONS.map(lh=><option key={lh} value={lh}>{lh} mm</option>)}
+                  <select
+                    value={layerHeight}
+                    onChange={(e) => setLayerHeight(Number(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  >
+                    {LAYER_HEIGHT_OPTIONS.map((lh) => (
+                      <option key={lh} value={lh}>
+                        {lh} mm
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="block font-medium">Color:</label>
-                <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-16 h-10 border rounded" />
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-16 h-10 border rounded"
+                />
               </div>
-
               <div className="bg-white p-4 rounded shadow space-y-2">
                 <h3 className="font-semibold">Print & Cost Details</h3>
                 <p>Volume: {volume.toFixed(2)} cm³</p>
@@ -202,20 +251,8 @@ export default function StlPriceCalculator() {
                 {dueDate && <p>Estimated Completion: {dueDate}</p>}
                 <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
               </div>
-
               <div>
                 <label className="block font-medium">Quantity:</label>
-                <input type="number" min="1" value={quantity} onChange={e=>setQuantity(Number(e.target.value))} className="w-full p-2 border rounded" />
-                <p className="text-sm text-gray-600 mt-1">If you order more than 3 items, expect a discount</p>
-              </div>
-
-              <button onClick={handleOrder} disabled={sending} className="mt-4 w-full bg-blue-600 text-white p-3 rounded shadow">
-                {sending ? 'Sending Order...' : 'Place Order'}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                <input
+                  type="number"
+                  min="1"
