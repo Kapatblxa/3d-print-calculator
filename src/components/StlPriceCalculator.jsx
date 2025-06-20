@@ -6,12 +6,34 @@ import { MeshStandardMaterial, Vector3 } from 'three';
 import dayjs from 'dayjs';
 import { Widget } from '@uploadcare/react-widget';
 
-// Pricing parameters
+// Расценки и материалы
 const MARKUP = 0.2;
-const MATERIAL_COST = { PLA: 0.05, ABS: 0.07, PETG: 0.10 };
-const TECHNOLOGY_COST = { FDM: 1.0, SLA: 5.0, SLS: 10.0 };
-const MATERIAL_DENSITY = { PLA: 1.24, ABS: 1.04, PETG: 1.27 };
-const PRINT_SPEED = { FDM: 15, SLA: 5, SLS: 10 };
+const TECHNOLOGY_COST = { FDM: 1.0, SLA: 5.0 };
+
+const MATERIALS = {
+  FDM: ['PLA', 'ABS', 'PETG'],
+  SLA: ['ABS-like', 'Plant based', 'Translucent'],
+};
+
+const MATERIAL_COST = {
+  PLA: 0.05,
+  ABS: 0.07,
+  PETG: 0.10,
+  'ABS-like': 0.15,
+  'Plant based': 0.17,
+  'Translucent': 0.19,
+};
+
+const MATERIAL_DENSITY = {
+  PLA: 1.24,
+  ABS: 1.04,
+  PETG: 1.27,
+  'ABS-like': 1.10,
+  'Plant based': 1.08,
+  'Translucent': 1.13,
+};
+
+const PRINT_SPEED = { FDM: 15, SLA: 5 };
 const INFILL_OPTIONS = [10, 20, 30, 50, 70, 100];
 const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
 
@@ -37,7 +59,7 @@ function calculateVolume(geometry) {
   const box = geometry.boundingBox;
   const size = new Vector3();
   box.getSize(size);
-  // Convert mm³ to cm³
+  // mm³ to cm³
   return (size.x / 10) * (size.y / 10) * (size.z / 10);
 }
 
@@ -45,8 +67,8 @@ export default function StlPriceCalculator() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileUuid, setFileUuid] = useState(null);
   const [color, setColor] = useState('#cccccc');
-  const [material, setMaterial] = useState('PLA');
   const [technology, setTechnology] = useState('FDM');
+  const [material, setMaterial] = useState('PLA');
   const [infill, setInfill] = useState(20);
   const [layerHeight, setLayerHeight] = useState(0.2);
   const [quantity, setQuantity] = useState(1);
@@ -59,9 +81,18 @@ export default function StlPriceCalculator() {
   const [unitPrice, setUnitPrice] = useState(0);
   const [sending, setSending] = useState(false);
 
+  // При смене технологии выбираем первый материал из списка
+  useEffect(() => {
+    setMaterial(MATERIALS[technology][0]);
+  }, [technology]);
+
   useEffect(() => {
     if (!fileUrl) {
-      setVolume(0); setWeight(0); setPrintTime(0); setDueDate(null); setUnitPrice(0);
+      setVolume(0);
+      setWeight(0);
+      setPrintTime(0);
+      setDueDate(null);
+      setUnitPrice(0);
       return;
     }
     const loader = new STLLoader();
@@ -70,8 +101,8 @@ export default function StlPriceCalculator() {
       (geometry) => {
         const fullVol = calculateVolume(geometry);
         const fullHours = fullVol / PRINT_SPEED[technology];
-        const baseCost = fullVol * MATERIAL_COST[material] + TECHNOLOGY_COST[technology] * fullHours;
-        const priceFull = baseCost * (1 + MARKUP);
+        const baseFull = fullVol * MATERIAL_COST[material] + TECHNOLOGY_COST[technology] * fullHours;
+        const priceFull = baseFull * (1 + MARKUP);
 
         const infillVol = fullVol * (infill / 100);
         setVolume(infillVol);
@@ -80,14 +111,18 @@ export default function StlPriceCalculator() {
         setPrintTime(hours);
         setDueDate(dayjs().add(Math.ceil(hours), 'hour').format('DD/MM/YYYY HH:mm'));
 
-        // Price difference max 20% relative to 100% infill
+        // Цена не меньше 10 евро
         const infillFactor = 0.8 + 0.2 * (infill / 100);
         const finalPrice = priceFull * infillFactor;
-        setUnitPrice(finalPrice.toFixed(2));
+        setUnitPrice(Math.max(Number(finalPrice), 10).toFixed(2));
       },
       undefined,
       () => {
-        setVolume(0); setWeight(0); setPrintTime(0); setDueDate(null); setUnitPrice(0);
+        setVolume(0);
+        setWeight(0);
+        setPrintTime(0);
+        setDueDate(null);
+        setUnitPrice(0);
       }
     );
   }, [fileUrl, material, technology, infill, layerHeight]);
@@ -131,14 +166,13 @@ export default function StlPriceCalculator() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="p-6 w-full max-w-5xl bg-white rounded shadow space-y-6">
         <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
-
         <div className="flex flex-col items-center">
           <p
-  className="text-sm mb-2"
-  style={{ color: '#b8b8b8' }}
->
-  For files below 10Mb
-</p>
+            className="text-sm mb-2"
+            style={{ color: '#d6d6d6' }}
+          >
+            Файл должен быть размером не более 10 МБ
+          </p>
           <Widget
             publicKey="8368b626f62009725d30"
             tabs="file url"
@@ -152,7 +186,6 @@ export default function StlPriceCalculator() {
             }}
           />
         </div>
-
         {fileUrl && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
             <div className="flex flex-col justify-between h-full">
@@ -178,34 +211,29 @@ export default function StlPriceCalculator() {
                 />
               </div>
             </div>
-
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium">Material:</label>
-                  <select
-                    value={material}
-                    onChange={(e) => setMaterial(e.target.value)}
-                    className="w-full p-2 border rounded"
-                  >
-                    {Object.keys(MATERIAL_COST).map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div>
                   <label className="block font-medium">Technology:</label>
                   <select
                     value={technology}
-                    onChange={(e) => setTechnology(e.target.value)}
+                    onChange={e => setTechnology(e.target.value)}
                     className="w-full p-2 border rounded"
                   >
-                    {Object.keys(TECHNOLOGY_COST).map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
+                    {Object.keys(TECHNOLOGY_COST).map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-medium">Material:</label>
+                  <select
+                    value={material}
+                    onChange={e => setMaterial(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  >
+                    {MATERIALS[technology].map(m => (
+                      <option key={m} value={m}>{m}</option>
                     ))}
                   </select>
                 </div>
@@ -214,13 +242,11 @@ export default function StlPriceCalculator() {
                 <label className="block font-medium">Infill (%):</label>
                 <select
                   value={infill}
-                  onChange={(e) => setInfill(Number(e.target.value))}
+                  onChange={e => setInfill(Number(e.target.value))}
                   className="w-full p-2 border rounded"
                 >
-                  {INFILL_OPTIONS.map((i) => (
-                    <option key={i} value={i}>
-                      {i}%
-                    </option>
+                  {INFILL_OPTIONS.map(i => (
+                    <option key={i} value={i}>{i}%</option>
                   ))}
                 </select>
               </div>
@@ -228,27 +254,23 @@ export default function StlPriceCalculator() {
                 <label className="block font-medium">Layer Height (mm):</label>
                 <select
                   value={layerHeight}
-                  onChange={(e) => setLayerHeight(Number(e.target.value))}
+                  onChange={e => setLayerHeight(Number(e.target.value))}
                   className="w-full p-2 border rounded"
                 >
-                  {LAYER_HEIGHT_OPTIONS.map((lh) => (
-                    <option key={lh} value={lh}>
-                      {lh} mm
-                    </option>
+                  {LAYER_HEIGHT_OPTIONS.map(lh => (
+                    <option key={lh} value={lh}>{lh} mm</option>
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="block font-medium">Color:</label>
                 <input
                   type="color"
                   value={color}
-                  onChange={(e) => setColor(e.target.value)}
+                  onChange={e => setColor(e.target.value)}
                   className="w-16 h-10 border rounded"
                 />
               </div>
-
               <div className="bg-white p-4 rounded shadow space-y-2">
                 <h3 className="font-semibold">Print & Cost Details</h3>
                 <p>Volume: {volume.toFixed(2)} cm³</p>
@@ -257,21 +279,19 @@ export default function StlPriceCalculator() {
                 {dueDate && <p>Estimated Completion: {dueDate}</p>}
                 <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
               </div>
-
               <div>
                 <label className="block font-medium">Quantity:</label>
                 <input
                   type="number"
                   min="1"
                   value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  onChange={e => setQuantity(Number(e.target.value))}
                   className="w-full p-2 border rounded"
                 />
                 <p className="text-sm text-gray-600 mt-1">
                   If you order more than 3 items, expect a discount
                 </p>
               </div>
-
               <button
                 onClick={handleOrder}
                 disabled={sending}
