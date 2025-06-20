@@ -183,7 +183,7 @@ export default function StlPriceCalculator() {
             className="text-sm mb-2"
             style={{ color: '#d6d6d6' }}
           >
-            Файл должен быть размером не более 10 МБ
+            File size below 10 Mb
           </p>
           <Widget
             publicKey="8368b626f62009725d30"
