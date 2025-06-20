@@ -133,7 +133,12 @@ export default function StlPriceCalculator() {
         <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
 
         <div className="flex flex-col items-center">
-          <p className="text-sm text-grey-400 mb-2">For files below 10Mb</p>
+          <p
+  className="text-sm mb-2"
+  style={{ color: '#d6d6d6' }}
+>
+  For files below 10Mb
+</p>
           <Widget
             publicKey="8368b626f62009725d30"
             tabs="file url"
