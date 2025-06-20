@@ -6,27 +6,12 @@ import { MeshStandardMaterial, Vector3 } from 'three';
 import dayjs from 'dayjs';
 import { Widget } from '@uploadcare/react-widget';
 
-const MARKUP = 0.2;
-
-// Список технологий (без SLS)
 const TECHNOLOGIES = ['FDM', 'SLA'];
-// FDM - теперь в 2 раза дешевле (было 1.0, стало 0.5)
-const TECHNOLOGY_COST = { FDM: 1.0 }; // Базовая стоимость — для SLA домножаем ниже
-
 const MATERIALS = {
   FDM: ['PLA', 'ABS', 'PETG'],
   SLA: ['ABS-like', 'Plant based', 'Translucent'],
 };
-
-const MATERIAL_COST = {
-  PLA: 0.05,
-  ABS: 0.07,
-  PETG: 0.10,
-  'ABS-like': 0.15,
-  'Plant based': 0.17,
-  'Translucent': 0.19,
-};
-
+// Плотности для пересчета объема в граммы
 const MATERIAL_DENSITY = {
   PLA: 1.24,
   ABS: 1.04,
@@ -35,7 +20,6 @@ const MATERIAL_DENSITY = {
   'Plant based': 1.08,
   'Translucent': 1.13,
 };
-
 const PRINT_SPEED = { FDM: 15, SLA: 5 };
 const INFILL_OPTIONS = [10, 20, 30, 50, 70, 100];
 const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
@@ -84,7 +68,6 @@ export default function StlPriceCalculator() {
   const [unitPrice, setUnitPrice] = useState(0);
   const [sending, setSending] = useState(false);
 
-  // При смене технологии — сбрасываем материал на первый в списке
   useEffect(() => {
     setMaterial(MATERIALS[technology][0]);
   }, [technology]);
@@ -103,30 +86,35 @@ export default function StlPriceCalculator() {
       fileUrl,
       (geometry) => {
         const fullVol = calculateVolume(geometry);
-        const fullHours = fullVol / PRINT_SPEED[technology];
-
-        // Стоимость технологии:
-        // FDM = 0.5x (т.е. в 2 раза дешевле, чем раньше)
-        // SLA = 2x (в 4 раза дороже FDM старого)
-        let techPriceMultiplier = 1;
-        if (technology === 'FDM') techPriceMultiplier = 0.5;
-        if (technology === 'SLA') techPriceMultiplier = 2;
-
-        const baseFull = fullVol * MATERIAL_COST[material] +
-          (TECHNOLOGY_COST['FDM'] * techPriceMultiplier) * fullHours;
-        const priceFull = baseFull * (1 + MARKUP);
-
         const infillVol = fullVol * (infill / 100);
+        const weightG = infillVol * MATERIAL_DENSITY[material];
+
         setVolume(infillVol);
-        setWeight(infillVol * MATERIAL_DENSITY[material]);
+        setWeight(weightG);
+
+        // Расчет print time
         const hours = infillVol / PRINT_SPEED[technology];
         setPrintTime(hours);
         setDueDate(dayjs().add(Math.ceil(hours), 'hour').format('DD/MM/YYYY HH:mm'));
 
+        let finalPrice = 0;
+        // FDM, PLA
+        if (technology === 'FDM' && material === 'PLA') {
+          finalPrice = weightG * 0.265;
+        }
+        // SLA, Plant based
+        else if (technology === 'SLA' && material === 'Plant based') {
+          finalPrice = weightG * 1.05;
+        }
+        // Остальные материалы — используйте свой тариф или такой же как для базовых:
+        else if (technology === 'FDM') {
+          finalPrice = weightG * 0.265;
+        }
+        else if (technology === 'SLA') {
+          finalPrice = weightG * 1.05;
+        }
         // Минимальная цена — 10 евро
-        const infillFactor = 0.8 + 0.2 * (infill / 100);
-        const finalPrice = priceFull * infillFactor;
-        setUnitPrice(Math.max(Number(finalPrice), 10).toFixed(2));
+        setUnitPrice(Math.max(finalPrice, 10).toFixed(2));
       },
       undefined,
       () => {
@@ -183,7 +171,7 @@ export default function StlPriceCalculator() {
             className="text-sm mb-2"
             style={{ color: '#d6d6d6' }}
           >
-            File size below 10 Mb
+            Файл должен быть размером не более 10 МБ
           </p>
           <Widget
             publicKey="8368b626f62009725d30"
