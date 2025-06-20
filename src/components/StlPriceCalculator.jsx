@@ -135,7 +135,7 @@ export default function StlPriceCalculator() {
         <div className="flex flex-col items-center">
           <p
   className="text-sm mb-2"
-  style={{ color: '#d6d6d6' }}
+  style={{ color: '#b8b8b8' }}
 >
   For files below 10Mb
 </p>
