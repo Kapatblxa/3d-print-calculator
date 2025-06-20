@@ -6,9 +6,12 @@ import { MeshStandardMaterial, Vector3 } from 'three';
 import dayjs from 'dayjs';
 import { Widget } from '@uploadcare/react-widget';
 
-// Расценки и материалы
 const MARKUP = 0.2;
-const TECHNOLOGY_COST = { FDM: 1.0, SLA: 5.0 };
+
+// Список технологий (без SLS)
+const TECHNOLOGIES = ['FDM', 'SLA'];
+// FDM - теперь в 2 раза дешевле (было 1.0, стало 0.5)
+const TECHNOLOGY_COST = { FDM: 1.0 }; // Базовая стоимость — для SLA домножаем ниже
 
 const MATERIALS = {
   FDM: ['PLA', 'ABS', 'PETG'],
@@ -81,7 +84,7 @@ export default function StlPriceCalculator() {
   const [unitPrice, setUnitPrice] = useState(0);
   const [sending, setSending] = useState(false);
 
-  // При смене технологии выбираем первый материал из списка
+  // При смене технологии — сбрасываем материал на первый в списке
   useEffect(() => {
     setMaterial(MATERIALS[technology][0]);
   }, [technology]);
@@ -101,7 +104,16 @@ export default function StlPriceCalculator() {
       (geometry) => {
         const fullVol = calculateVolume(geometry);
         const fullHours = fullVol / PRINT_SPEED[technology];
-        const baseFull = fullVol * MATERIAL_COST[material] + TECHNOLOGY_COST[technology] * fullHours;
+
+        // Стоимость технологии:
+        // FDM = 0.5x (т.е. в 2 раза дешевле, чем раньше)
+        // SLA = 2x (в 4 раза дороже FDM старого)
+        let techPriceMultiplier = 1;
+        if (technology === 'FDM') techPriceMultiplier = 0.5;
+        if (technology === 'SLA') techPriceMultiplier = 2;
+
+        const baseFull = fullVol * MATERIAL_COST[material] +
+          (TECHNOLOGY_COST['FDM'] * techPriceMultiplier) * fullHours;
         const priceFull = baseFull * (1 + MARKUP);
 
         const infillVol = fullVol * (infill / 100);
@@ -111,7 +123,7 @@ export default function StlPriceCalculator() {
         setPrintTime(hours);
         setDueDate(dayjs().add(Math.ceil(hours), 'hour').format('DD/MM/YYYY HH:mm'));
 
-        // Цена не меньше 10 евро
+        // Минимальная цена — 10 евро
         const infillFactor = 0.8 + 0.2 * (infill / 100);
         const finalPrice = priceFull * infillFactor;
         setUnitPrice(Math.max(Number(finalPrice), 10).toFixed(2));
@@ -220,7 +232,7 @@ export default function StlPriceCalculator() {
                     onChange={e => setTechnology(e.target.value)}
                     className="w-full p-2 border rounded"
                   >
-                    {Object.keys(TECHNOLOGY_COST).map(t => (
+                    {TECHNOLOGIES.map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
