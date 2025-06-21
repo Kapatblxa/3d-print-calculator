@@ -11,7 +11,6 @@ const MATERIALS = {
   FDM: ['PLA', 'ABS', 'PETG'],
   SLA: ['ABS-like', 'Plant based', 'Translucent'],
 };
-// Плотности для пересчета объема в граммы
 const MATERIAL_DENSITY = {
   PLA: 1.24,
   ABS: 1.04,
@@ -23,6 +22,18 @@ const MATERIAL_DENSITY = {
 const PRINT_SPEED = { FDM: 15, SLA: 5 };
 const INFILL_OPTIONS = [10, 20, 30, 50, 70, 100];
 const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
+
+// Цены для расчета
+const PRICE_PER_GRAM = {
+  // FDM
+  PLA: 0.265,
+  ABS: 0.265,
+  PETG: 0.265,
+  // SLA
+  'Plant based': 1.05,
+  'Translucent': 1.3125, // 25% дороже
+  'ABS-like': 1.1865,    // 13% дороже
+};
 
 function Loader() {
   const { progress } = useProgress();
@@ -51,6 +62,12 @@ function calculateVolume(geometry) {
 }
 
 export default function StlPriceCalculator() {
+  // Новые поля для формы:
+  const [fullName, setFullName] = useState('');
+  const [nif, setNif] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+
   const [fileUrl, setFileUrl] = useState(null);
   const [fileUuid, setFileUuid] = useState(null);
   const [color, setColor] = useState('#cccccc');
@@ -97,23 +114,8 @@ export default function StlPriceCalculator() {
         setPrintTime(hours);
         setDueDate(dayjs().add(Math.ceil(hours), 'hour').format('DD/MM/YYYY HH:mm'));
 
-        let finalPrice = 0;
-        // FDM, PLA
-        if (technology === 'FDM' && material === 'PLA') {
-          finalPrice = weightG * 0.265;
-        }
-        // SLA, Plant based
-        else if (technology === 'SLA' && material === 'Plant based') {
-          finalPrice = weightG * 1.05;
-        }
-        // Остальные материалы — используйте свой тариф или такой же как для базовых:
-        else if (technology === 'FDM') {
-          finalPrice = weightG * 0.265;
-        }
-        else if (technology === 'SLA') {
-          finalPrice = weightG * 1.05;
-        }
-        // Минимальная цена — 10 евро
+        // Логика стоимости по материалу
+        let finalPrice = (PRICE_PER_GRAM[material] || 1) * weightG;
         setUnitPrice(Math.max(finalPrice, 10).toFixed(2));
       },
       undefined,
@@ -137,6 +139,10 @@ export default function StlPriceCalculator() {
     const payload = {
       file_url: fileUrl,
       file_uuid: fileUuid,
+      fullName,
+      nif,
+      phone,
+      email,
       material,
       technology,
       infill: `${infill}%`,
@@ -185,6 +191,49 @@ export default function StlPriceCalculator() {
               setFileUuid(fileInfo.uuid);
             }}
           />
+        </div>
+        {/* Новые поля формы */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium">Full Name:</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="Enter your name"
+            />
+          </div>
+          <div>
+            <label className="block font-medium">NIF Number:</label>
+            <input
+              type="text"
+              value={nif}
+              onChange={e => setNif(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="NIF"
+            />
+          </div>
+          <div>
+            <label className="block font-medium">Phone:</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="Phone"
+            />
+          </div>
+          <div>
+            <label className="block font-medium">Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="Email"
+            />
+          </div>
         </div>
         {fileUrl && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
