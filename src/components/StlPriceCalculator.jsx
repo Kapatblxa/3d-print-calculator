@@ -177,7 +177,7 @@ export default function StlPriceCalculator() {
             className="text-sm mb-2"
             style={{ color: '#d6d6d6' }}
           >
-            Файл должен быть размером не более 10 МБ
+            For files below 10 Mb
           </p>
           <Widget
             publicKey="8368b626f62009725d30"
@@ -192,164 +192,167 @@ export default function StlPriceCalculator() {
             }}
           />
         </div>
-        {/* Новые поля формы */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium">Full Name:</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your name"
-            />
-          </div>
-          <div>
-            <label className="block font-medium">NIF Number:</label>
-            <input
-              type="text"
-              value={nif}
-              onChange={e => setNif(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="NIF"
-            />
-          </div>
-          <div>
-            <label className="block font-medium">Phone:</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Phone"
-            />
-          </div>
-          <div>
-            <label className="block font-medium">Email:</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Email"
-            />
-          </div>
-        </div>
         {fileUrl && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-            <div className="flex flex-col justify-between h-full">
-              <div className="h-96 bg-gray-50 rounded overflow-hidden">
-                <Canvas>
-                  <ambientLight intensity={0.6} />
-                  <directionalLight position={[0, 10, 10]} intensity={1} />
-                  <React.Suspense fallback={<Loader />}>
-                    <Bounds fit clip margin={1.2}>
-                      <Model url={fileUrl} color={color} />
-                    </Bounds>
-                  </React.Suspense>
-                  <OrbitControls makeDefault enablePan enableZoom />
-                </Canvas>
+          <>
+            {/* Новые поля формы: */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block font-medium">Full Name:</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter your name"
+                />
               </div>
-              <div className="flex-grow flex flex-col justify-end">
-                <label className="block font-medium">Comments:</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="w-full p-2 border rounded flex-grow"
-                  placeholder="Add any special instructions..."
+              <div>
+                <label className="block font-medium">NIF Number:</label>
+                <input
+                  type="text"
+                  value={nif}
+                  onChange={e => setNif(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="NIF"
+                />
+              </div>
+              <div>
+                <label className="block font-medium">Phone:</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Phone"
+                />
+              </div>
+              <div>
+                <label className="block font-medium">Email:</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Email"
                 />
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Форма расчета */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+              <div className="flex flex-col justify-between h-full">
+                <div className="h-96 bg-gray-50 rounded overflow-hidden">
+                  <Canvas>
+                    <ambientLight intensity={0.6} />
+                    <directionalLight position={[0, 10, 10]} intensity={1} />
+                    <React.Suspense fallback={<Loader />}>
+                      <Bounds fit clip margin={1.2}>
+                        <Model url={fileUrl} color={color} />
+                      </Bounds>
+                    </React.Suspense>
+                    <OrbitControls makeDefault enablePan enableZoom />
+                  </Canvas>
+                </div>
+                <div className="flex-grow flex flex-col justify-end">
+                  <label className="block font-medium">Comments:</label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full p-2 border rounded flex-grow"
+                    placeholder="Add any special instructions..."
+                  />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium">Technology:</label>
+                    <select
+                      value={technology}
+                      onChange={e => setTechnology(e.target.value)}
+                      className="w-full p-2 border rounded"
+                    >
+                      {TECHNOLOGIES.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-medium">Material:</label>
+                    <select
+                      value={material}
+                      onChange={e => setMaterial(e.target.value)}
+                      className="w-full p-2 border rounded"
+                    >
+                      {MATERIALS[technology].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <div>
-                  <label className="block font-medium">Technology:</label>
+                  <label className="block font-medium">Infill (%):</label>
                   <select
-                    value={technology}
-                    onChange={e => setTechnology(e.target.value)}
+                    value={infill}
+                    onChange={e => setInfill(Number(e.target.value))}
                     className="w-full p-2 border rounded"
                   >
-                    {TECHNOLOGIES.map(t => (
-                      <option key={t} value={t}>{t}</option>
+                    {INFILL_OPTIONS.map(i => (
+                      <option key={i} value={i}>{i}%</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium">Material:</label>
+                  <label className="block font-medium">Layer Height (mm):</label>
                   <select
-                    value={material}
-                    onChange={e => setMaterial(e.target.value)}
+                    value={layerHeight}
+                    onChange={e => setLayerHeight(Number(e.target.value))}
                     className="w-full p-2 border rounded"
                   >
-                    {MATERIALS[technology].map(m => (
-                      <option key={m} value={m}>{m}</option>
+                    {LAYER_HEIGHT_OPTIONS.map(lh => (
+                      <option key={lh} value={lh}>{lh} mm</option>
                     ))}
                   </select>
                 </div>
-              </div>
-              <div>
-                <label className="block font-medium">Infill (%):</label>
-                <select
-                  value={infill}
-                  onChange={e => setInfill(Number(e.target.value))}
-                  className="w-full p-2 border rounded"
+                <div>
+                  <label className="block font-medium">Color:</label>
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={e => setColor(e.target.value)}
+                    className="w-16 h-10 border rounded"
+                  />
+                </div>
+                <div className="bg-white p-4 rounded shadow space-y-2">
+                  <h3 className="font-semibold">Print & Cost Details</h3>
+                  <p>Volume: {volume.toFixed(2)} cm³</p>
+                  <p>Weight: {weight.toFixed(1)} g</p>
+                  <p>Print Time: {printTime.toFixed(1)} h</p>
+                  {dueDate && <p>Estimated Completion: {dueDate}</p>}
+                  <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
+                </div>
+                <div>
+                  <label className="block font-medium">Quantity:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={e => setQuantity(Number(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    If you order more than 3 items, expect a discount
+                  </p>
+                </div>
+                <button
+                  onClick={handleOrder}
+                  disabled={sending}
+                  className="mt-4 w-full bg-blue-600 text-white p-3 rounded shadow"
                 >
-                  {INFILL_OPTIONS.map(i => (
-                    <option key={i} value={i}>{i}%</option>
-                  ))}
-                </select>
+                  {sending ? 'Sending Order...' : 'Place Order'}
+                </button>
               </div>
-              <div>
-                <label className="block font-medium">Layer Height (mm):</label>
-                <select
-                  value={layerHeight}
-                  onChange={e => setLayerHeight(Number(e.target.value))}
-                  className="w-full p-2 border rounded"
-                >
-                  {LAYER_HEIGHT_OPTIONS.map(lh => (
-                    <option key={lh} value={lh}>{lh} mm</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium">Color:</label>
-                <input
-                  type="color"
-                  value={color}
-                  onChange={e => setColor(e.target.value)}
-                  className="w-16 h-10 border rounded"
-                />
-              </div>
-              <div className="bg-white p-4 rounded shadow space-y-2">
-                <h3 className="font-semibold">Print & Cost Details</h3>
-                <p>Volume: {volume.toFixed(2)} cm³</p>
-                <p>Weight: {weight.toFixed(1)} g</p>
-                <p>Print Time: {printTime.toFixed(1)} h</p>
-                {dueDate && <p>Estimated Completion: {dueDate}</p>}
-                <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
-              </div>
-              <div>
-                <label className="block font-medium">Quantity:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={e => setQuantity(Number(e.target.value))}
-                  className="w-full p-2 border rounded"
-                />
-                <p className="text-sm text-gray-600 mt-1">
-                  If you order more than 3 items, expect a discount
-                </p>
-              </div>
-              <button
-                onClick={handleOrder}
-                disabled={sending}
-                className="mt-4 w-full bg-blue-600 text-white p-3 rounded shadow"
-              >
-                {sending ? 'Sending Order...' : 'Place Order'}
-              </button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
