@@ -70,7 +70,7 @@ export default function StlPriceCalculator() {
 
   const [fileUrl, setFileUrl] = useState(null);
   const [fileUuid, setFileUuid] = useState(null);
-  const [color, setColor] = useState('#cccccc');
+  const [color, setColor] = useState('#d6d6d6'); // Светло-серый по умолчанию
   const [technology, setTechnology] = useState('FDM');
   const [material, setMaterial] = useState('PLA');
   const [infill, setInfill] = useState(20);
@@ -116,7 +116,7 @@ export default function StlPriceCalculator() {
 
         // Логика стоимости по материалу
         let finalPrice = (PRICE_PER_GRAM[material] || 1) * weightG;
-        setUnitPrice(Math.max(finalPrice, 10).toFixed(2));
+        setUnitPrice(Math.max(finalPrice, 10).toFixed(2)); // Минимум 10 евро
       },
       undefined,
       () => {
@@ -129,7 +129,7 @@ export default function StlPriceCalculator() {
     );
   }, [fileUrl, material, technology, infill, layerHeight]);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (!fileUuid) {
       alert('Please upload an STL file first.');
       return;
@@ -157,19 +157,23 @@ export default function StlPriceCalculator() {
       total_price: `€ ${totalPrice}`,
       comment,
     };
-    fetch('https://your-server.com/api/order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then((data) => alert(data.message || 'Order sent'))
-      .catch((err) => alert('Error: ' + err))
-      .finally(() => setSending(false));
+    try {
+      const res = await fetch('/.netlify/functions/sendOrder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      alert(data.message || 'Order sent!');
+    } catch (err) {
+      alert('Error: ' + err);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <div className="p-6 w-full max-w-5xl bg-white rounded shadow space-y-6">
         <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
         <div className="flex flex-col items-center">
@@ -204,6 +208,7 @@ export default function StlPriceCalculator() {
                   onChange={e => setFullName(e.target.value)}
                   className="w-full p-2 border rounded"
                   placeholder="Enter your name"
+                  required
                 />
               </div>
               <div>
@@ -214,6 +219,7 @@ export default function StlPriceCalculator() {
                   onChange={e => setNif(e.target.value)}
                   className="w-full p-2 border rounded"
                   placeholder="NIF"
+                  required
                 />
               </div>
               <div>
@@ -224,6 +230,7 @@ export default function StlPriceCalculator() {
                   onChange={e => setPhone(e.target.value)}
                   className="w-full p-2 border rounded"
                   placeholder="Phone"
+                  required
                 />
               </div>
               <div>
@@ -234,6 +241,7 @@ export default function StlPriceCalculator() {
                   onChange={e => setEmail(e.target.value)}
                   className="w-full p-2 border rounded"
                   placeholder="Email"
+                  required
                 />
               </div>
             </div>
@@ -252,7 +260,7 @@ export default function StlPriceCalculator() {
                     <OrbitControls makeDefault enablePan enableZoom />
                   </Canvas>
                 </div>
-                <div className="flex-grow flex flex-col justify-end">
+                <div className="flex-grow flex flex-col justify-end mt-4">
                   <label className="block font-medium">Comments:</label>
                   <textarea
                     value={comment}
@@ -262,7 +270,7 @@ export default function StlPriceCalculator() {
                   />
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col h-full">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block font-medium">Technology:</label>
