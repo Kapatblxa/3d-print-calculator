@@ -1,79 +1,71 @@
 const nodemailer = require('nodemailer');
 
-exports.handler = async function(event, context) {
-  console.log('Function sendOrder started');
-
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
+exports.handler = async (event, context) => {
   try {
-    const data = JSON.parse(event.body);
-    console.log('Received data:', data);
+    // Разбираем данные заказа из тела запроса
+    const orderData = JSON.parse(event.body);
 
-    // Проверь переменные окружения
-    const user = process.env.MAIL_USER;
-    const pass = process.env.MAIL_PASS;
-    console.log('Mail user:', user);
+    // Формируем номер заказа по дате: YYYY_MM_DD
+    const now = new Date();
+    const orderNumber = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
 
-    if (!user || !pass) {
-      console.error("MAIL_USER or MAIL_PASS not set in environment!");
-      return { statusCode: 500, body: "Mail settings not configured." };
-    }
+    // Добавляем номер заказа в orderData для письма
+    orderData.orderNumber = orderNumber;
 
-    // Настрой транспорт
+    // Формируем текст письма
+    const messageLines = [
+      `Order number: ${orderNumber}`,
+      '',
+      `Full Name: ${orderData.fullName}`,
+      `NIF: ${orderData.nif}`,
+      `Phone: ${orderData.phone}`,
+      `Email: ${orderData.email}`,
+      `Technology: ${orderData.technology}`,
+      `Material: ${orderData.material}`,
+      `Infill: ${orderData.infill}`,
+      `Layer Height: ${orderData.layer_height}`,
+      `Color: ${orderData.color}`,
+      `Quantity: ${orderData.quantity}`,
+      `Volume: ${orderData.volume}`,
+      `Weight: ${orderData.weight}`,
+      `Print Time: ${orderData.print_time}`,
+      `Due Date: ${orderData.due_date}`,
+      `Unit Price: ${orderData.unit_price}`,
+      `Total Price: ${orderData.total_price}`,
+      `Comments: ${orderData.comment}`,
+      `File URL: ${orderData.file_url}`,
+    ];
+
+    const messageText = messageLines.join('\n');
+
+    // Настройка транспорта Nodemailer
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
       host: 'smtp.gmail.com',
-   port: 465,
-   secure: true,
+      port: 465,
+      secure: true, // SSL
       auth: {
-        user,
-        pass
-      }
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
     });
 
-    // Формируем письмо
-    const message = {
-      from: user,
+    // Отправка письма
+    await transporter.sendMail({
+      from: process.env.MAIL_USER,
       to: 'procrea.printing@gmail.com',
-      subject: 'New 3D Print Order',
-      text: `
-Order Details:
-Name: ${data.fullName}
-NIF: ${data.nif}
-Phone: ${data.phone}
-Email: ${data.email}
-Technology: ${data.technology}
-Material: ${data.material}
-Color: ${data.color}
-Infill: ${data.infill}
-Layer height: ${data.layer_height}
-Quantity: ${data.quantity}
-Volume: ${data.volume}
-Weight: ${data.weight}
-Print time: ${data.print_time}
-Due date: ${data.due_date}
-Unit price: ${data.unit_price}
-Total price: ${data.total_price}
-Comment: ${data.comment}
-File: ${data.file_url}
-      `,
-    };
-
-    // Пытаемся отправить
-    const info = await transporter.sendMail(message);
-    console.log('Email sent:', info.response);
+      subject: `3D Print Order #${orderNumber}`,
+      text: messageText,
+    });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Order sent successfully!" }),
+      body: JSON.stringify({ message: `Order #${orderNumber} sent!` }),
     };
   } catch (error) {
     console.error('SendOrder error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: "Failed to send order.", error: error.message }),
+      body: JSON.stringify({ message: 'Failed to send order.' }),
     };
   }
 };
