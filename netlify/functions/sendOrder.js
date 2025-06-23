@@ -2,14 +2,19 @@ const nodemailer = require('nodemailer');
 
 exports.handler = async (event, context) => {
   try {
-    // Разбираем данные заказа из тела запроса
+    // Получаем данные заказа из тела запроса
     const orderData = JSON.parse(event.body);
 
-    // Формируем номер заказа по дате: YYYY_MM_DD
+    // Формируем номер заказа: YYYY_MM_DD_HHMM (например, 2024_06_23_2243)
     const now = new Date();
-    const orderNumber = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const orderNumber = `${year}_${month}_${day}_${hour}${minute}`;
 
-    // Добавляем номер заказа в orderData для письма
+    // Добавим номер заказа в orderData
     orderData.orderNumber = orderNumber;
 
     // Формируем текст письма
