@@ -23,6 +23,9 @@ const PRINT_SPEED = { FDM: 15, SLA: 5 };
 const INFILL_OPTIONS = [10, 20, 30, 50, 70, 100];
 const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
 
+// Минимальный заказ (MOQ)
+const MIN_QTY = 10;
+
 // Цены для расчета
 const PRICE_PER_GRAM = {
   // FDM
@@ -75,7 +78,7 @@ export default function StlPriceCalculator() {
   const [material, setMaterial] = useState('PLA');
   const [infill, setInfill] = useState(20);
   const [layerHeight, setLayerHeight] = useState(0.2);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(MIN_QTY); // MOQ по умолчанию
   const [comment, setComment] = useState('');
 
   const [volume, setVolume] = useState(0);
@@ -116,7 +119,7 @@ export default function StlPriceCalculator() {
 
         // Логика стоимости по материалу
         let finalPrice = (PRICE_PER_GRAM[material] || 1) * weightG;
-        setUnitPrice(Math.max(finalPrice, 10).toFixed(2)); // Минимум 10 евро
+        setUnitPrice(Number(Math.max(finalPrice, 10).toFixed(2))); // Минимум €10 за единицу; храним числом
       },
       undefined,
       () => {
@@ -135,7 +138,10 @@ export default function StlPriceCalculator() {
       return;
     }
     setSending(true);
-    const totalPrice = (unitPrice * quantity).toFixed(2);
+
+    const billableQty = Math.max(Number(quantity) || 0, MIN_QTY);
+    const totalPrice = (unitPrice * billableQty).toFixed(2);
+
     const payload = {
       file_url: fileUrl,
       file_uuid: fileUuid,
@@ -148,15 +154,18 @@ export default function StlPriceCalculator() {
       infill: `${infill}%`,
       layer_height: `${layerHeight} mm`,
       color,
-      quantity,
+      quantity_requested: Number(quantity),
+      quantity_billed: billableQty, // MOQ применяется здесь
       volume: `${volume.toFixed(2)} cm³`,
-      weight: `${(weight * quantity).toFixed(1)} g`,
-      print_time: `${(printTime * quantity).toFixed(1)} h`,
+      weight: `${(weight * billableQty).toFixed(1)} g`,
+      print_time: `${(printTime * billableQty).toFixed(1)} h`,
       due_date: dueDate,
-      unit_price: `€ ${unitPrice}`,
+      unit_price: `€ ${unitPrice.toFixed(2)}`,
       total_price: `€ ${totalPrice}`,
       comment,
+      moq: MIN_QTY
     };
+
     try {
       const res = await fetch('/.netlify/functions/sendOrder', {
         method: 'POST',
@@ -336,19 +345,23 @@ export default function StlPriceCalculator() {
                   <p>Weight: {weight.toFixed(1)} g</p>
                   <p>Print Time: {printTime.toFixed(1)} h</p>
                   {dueDate && <p>Estimated Completion: {dueDate}</p>}
-                  <p className="text-lg font-bold">Unit Price: € {unitPrice}</p>
+                  <p className="text-lg font-bold">Unit Price: € {unitPrice.toFixed(2)}</p>
                 </div>
                 <div>
                   <label className="block font-medium">Quantity:</label>
                   <input
                     type="number"
-                    min="1"
+                    min={MIN_QTY}
+                    step={1}
                     value={quantity}
-                    onChange={e => setQuantity(Number(e.target.value))}
+                    onChange={e => {
+                      const v = Number(e.target.value) || 0;
+                      setQuantity(Math.max(MIN_QTY, v));
+                    }}
                     className="w-full p-2 border rounded"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    If you order more than 3 items, expect a discount
+                    Minimum order: {MIN_QTY} items. Volume discounts may apply.
                   </p>
                 </div>
                 <button
