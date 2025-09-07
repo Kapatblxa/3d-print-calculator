@@ -26,9 +26,9 @@ const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
 // PREÇO DE VENDA por grama (com margem já incluída)
 const PRICE_PER_GRAM = {
   // FDM
-  PLA: 0.09,  // venda final pretendida
-  ABS: 0.04,
-  PETG: 0.04,
+  PLA: 0.065,  // venda final pretendida
+  ABS: 0.065,
+  PETG: 0.065,
   // SLA
   'Plant based': 1.05,
   'Translucent': 1.3125, // +25%
@@ -396,7 +396,7 @@ export default function StlPriceCalculator() {
                     className="w-full p-2 border rounded"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    1–9 unidades: mínimo 10 € por peça. A partir de 10 unidades: sem mínimo.
+                   Para encomendas de 20 ou mais artigos, aplicam-se descontos.
                   </p>
                 </div>
 
