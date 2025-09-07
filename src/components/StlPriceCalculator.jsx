@@ -23,21 +23,31 @@ const PRINT_SPEED = { FDM: 15, SLA: 5 };
 const INFILL_OPTIONS = [10, 20, 30, 50, 70, 100];
 const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
 
-// Финальные цены за грамм (с наценками)
+// PREÇO DE VENDA por grama (com margem já incluída)
 const PRICE_PER_GRAM = {
   // FDM
-  PLA: 0.065,   // Требование: 0.09 €/g (включая наценки)
-  ABS: 0.065,
-  PETG: 0.065,
+  PLA: 0.09,  // venda final pretendida
+  ABS: 0.04,
+  PETG: 0.04,
   // SLA
   'Plant based': 1.05,
   'Translucent': 1.3125, // +25%
   'ABS-like': 1.1865,    // +13%
 };
 
+// CUSTO (SEBES) por grama — para controlo interno (não mostrado ao cliente)
+const COST_PER_GRAM = {
+  PLA: 0.065,
+  ABS: 0.065,    // ajuste se quiser custos específicos por material
+  PETG: 0.065,
+  'Plant based': 0.8,
+  'Translucent': 1.0,
+  'ABS-like': 0.9,
+};
+
 function Loader() {
   const { progress } = useProgress();
-  return <Html center>{progress.toFixed(0)}% loading</Html>;
+  return <Html center>{progress.toFixed(0)}% a carregar</Html>;
 }
 
 function Model({ url, color }) {
@@ -51,41 +61,42 @@ function Model({ url, color }) {
   return <mesh geometry={geometry} material={material} />;
 }
 
+// volume aproximado pelo bounding box (cm³) — depois aplicamos infill
 function calculateVolume(geometry) {
   if (!geometry?.attributes?.position) return 0;
   geometry.computeBoundingBox();
   const box = geometry.boundingBox;
   const size = new Vector3();
   box.getSize(size);
-  // mm³ -> cm³ (грубая оценка: объём bounding box, умноженный на infill ниже)
+  // mm -> cm
   return (size.x / 10) * (size.y / 10) * (size.z / 10);
 }
 
 export default function StlPriceCalculator() {
-  // Данные клиента
+  // Dados do cliente
   const [fullName, setFullName] = useState('');
   const [nif, setNif] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
-  // Файл
+  // Ficheiro
   const [fileUrl, setFileUrl] = useState(null);
   const [fileUuid, setFileUuid] = useState(null);
 
-  // Параметры печати
-  const [color, setColor] = useState('#d6d6d6');
+  // Parâmetros de impressão
+  const [color, setColor] = useState('#d6d6d6'); // cinzento claro por defeito
   const [technology, setTechnology] = useState('FDM');
   const [material, setMaterial] = useState('PLA');
   const [infill, setInfill] = useState(20);
   const [layerHeight, setLayerHeight] = useState(0.2);
 
-  // Кол-во
-  const [quantity, setQuantity] = useState(10); // по умолчанию 10
+  // Quantidade (por defeito 10)
+  const [quantity, setQuantity] = useState(10);
 
-  // Комментарий
+  // Observações
   const [comment, setComment] = useState('');
 
-  // Расчётные величины
+  // Métricas e custo
   const [volume, setVolume] = useState(0);
   const [weight, setWeight] = useState(0);
   const [printTime, setPrintTime] = useState(0);
@@ -94,12 +105,12 @@ export default function StlPriceCalculator() {
 
   const [sending, setSending] = useState(false);
 
-  // при смене технологии — сбрасываем материал на первый из списка
+  // ao mudar tecnologia, garantir um material válido
   useEffect(() => {
     setMaterial(MATERIALS[technology][0]);
   }, [technology]);
 
-  // перерасчёт метрик и цены
+  // cálculo quando muda ficheiro/parâmetros/quantidade
   useEffect(() => {
     if (!fileUrl) {
       setVolume(0);
@@ -115,23 +126,23 @@ export default function StlPriceCalculator() {
       fileUrl,
       (geometry) => {
         const fullVol = calculateVolume(geometry); // cm³ (bounding box)
-        const infillVol = fullVol * (infill / 100); // учёт заполнения
-        const weightG = infillVol * MATERIAL_DENSITY[material]; // г (плотность ~ г/см³)
+        const infillVol = fullVol * (infill / 100);
+        const weightG = infillVol * MATERIAL_DENSITY[material]; // g
 
         setVolume(infillVol);
         setWeight(weightG);
 
-        // Оценка времени печати
+        // tempo (estimativa simples)
         const hours = infillVol / PRINT_SPEED[technology];
         setPrintTime(hours);
         setDueDate(dayjs().add(Math.ceil(hours), 'hour').format('DD/MM/YYYY HH:mm'));
 
-        // Цена за единицу (без минималки)
+        // preço base por unidade (sem mínimos)
         const baseUnit = (PRICE_PER_GRAM[material] || 1) * weightG;
 
-        // Применяем условие минимальной цены:
-        // - если quantity от 1 до 9 включительно — минимум €10/шт
-        // - если quantity >= 10 — минимум НЕ применяется
+        // Regra de mínimos:
+        // 1–9 unidades => mínimo 10€ / unidade
+        // 10+ unidades => sem mínimo
         const qty = Number(quantity) || 0;
         const effectiveUnit = (qty >= 10) ? baseUnit : Math.max(baseUnit, 10);
 
@@ -150,7 +161,7 @@ export default function StlPriceCalculator() {
 
   const handleOrder = async () => {
     if (!fileUuid) {
-      alert('Please upload an STL file first.');
+      alert('Por favor, carregue primeiro um ficheiro STL.');
       return;
     }
     setSending(true);
@@ -178,6 +189,8 @@ export default function StlPriceCalculator() {
       unit_price: `€ ${unitPrice.toFixed(2)}`,
       total_price: `€ ${totalPrice}`,
       comment,
+      // Interno (se quiser ver margens no e-mail/trello):
+      internal_cost_unit: `€ ${((COST_PER_GRAM[material] ?? 0) * weight).toFixed(2)}`,
     };
 
     try {
@@ -187,9 +200,9 @@ export default function StlPriceCalculator() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      alert(data.message || 'Order sent!');
+      alert(data.message || 'Encomenda enviada!');
     } catch (err) {
-      alert('Error: ' + err);
+      alert('Erro: ' + err);
     } finally {
       setSending(false);
     }
@@ -198,11 +211,11 @@ export default function StlPriceCalculator() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <div className="p-6 w-full max-w-5xl bg-white rounded shadow space-y-6">
-        <h2 className="text-2xl font-bold text-center">3D Print Cost & Order Form</h2>
+        <h2 className="text-2xl font-bold text-center">Cálculo & Encomenda de Impressão 3D</h2>
 
         <div className="flex flex-col items-center">
-          <p className="text-sm mb-2" style={{ color: '#d6d6d6' }}>
-            For files below 10 Mb
+          <p className="text-sm mb-2" style={{ color: '#9c9c9c' }}>
+            Para ficheiros até 10&nbsp;MB
           </p>
           <Widget
             publicKey="8368b626f62009725d30"
@@ -220,55 +233,55 @@ export default function StlPriceCalculator() {
 
         {fileUrl && (
           <>
-            {/* Контакты */}
+            {/* Dados de contacto */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block font-medium">Full Name:</label>
+                <label className="block font-medium">Nome completo:</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="Enter your name"
+                  placeholder="O seu nome"
                   required
                 />
               </div>
               <div>
-                <label className="block font-medium">NIF Number:</label>
+                <label className="block font-medium">NIF:</label>
                 <input
                   type="text"
                   value={nif}
                   onChange={e => setNif(e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="NIF"
+                  placeholder="Número de contribuinte"
                   required
                 />
               </div>
               <div>
-                <label className="block font-medium">Phone:</label>
+                <label className="block font-medium">Telemóvel:</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="Phone"
+                  placeholder="Contacto"
                   required
                 />
               </div>
               <div>
-                <label className="block font-medium">Email:</label>
+                <label className="block font-medium">E-mail:</label>
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="Email"
+                  placeholder="nome@exemplo.pt"
                   required
                 />
               </div>
             </div>
 
-            {/* Формы расчёта */}
+            {/* Formulário de cálculo */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
               <div className="flex flex-col justify-between h-full">
                 <div className="h-96 bg-gray-50 rounded overflow-hidden">
@@ -284,12 +297,12 @@ export default function StlPriceCalculator() {
                   </Canvas>
                 </div>
                 <div className="flex-grow flex flex-col justify-end mt-4">
-                  <label className="block font-medium">Comments:</label>
+                  <label className="block font-medium">Observações:</label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     className="w-full p-2 border rounded flex-grow"
-                    placeholder="Add any special instructions..."
+                    placeholder="Alguma instrução especial?"
                   />
                 </div>
               </div>
@@ -297,7 +310,7 @@ export default function StlPriceCalculator() {
               <div className="space-y-4 flex flex-col h-full">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium">Technology:</label>
+                    <label className="block font-medium">Tecnologia:</label>
                     <select
                       value={technology}
                       onChange={e => setTechnology(e.target.value)}
@@ -323,7 +336,7 @@ export default function StlPriceCalculator() {
                 </div>
 
                 <div>
-                  <label className="block font-medium">Infill (%):</label>
+                  <label className="block font-medium">Preenchimento (%):</label>
                   <select
                     value={infill}
                     onChange={e => setInfill(Number(e.target.value))}
@@ -336,7 +349,7 @@ export default function StlPriceCalculator() {
                 </div>
 
                 <div>
-                  <label className="block font-medium">Layer Height (mm):</label>
+                  <label className="block font-medium">Altura de camada (mm):</label>
                   <select
                     value={layerHeight}
                     onChange={e => setLayerHeight(Number(e.target.value))}
@@ -349,7 +362,7 @@ export default function StlPriceCalculator() {
                 </div>
 
                 <div>
-                  <label className="block font-medium">Color:</label>
+                  <label className="block font-medium">Cor:</label>
                   <input
                     type="color"
                     value={color}
@@ -359,29 +372,31 @@ export default function StlPriceCalculator() {
                 </div>
 
                 <div className="bg-white p-4 rounded shadow space-y-2">
-                  <h3 className="font-semibold">Print & Cost Details</h3>
+                  <h3 className="font-semibold">Detalhes de impressão & custo</h3>
                   <p>Volume: {volume.toFixed(2)} cm³</p>
-                  <p>Weight: {weight.toFixed(1)} g</p>
-                  <p>Print Time: {printTime.toFixed(1)} h</p>
-                  {dueDate && <p>Estimated Completion: {dueDate}</p>}
-                  <p className="text-lg font-bold">Unit Price: € {unitPrice.toFixed(2)}</p>
+                  <p>Peso: {weight.toFixed(1)} g</p>
+                  <p>Tempo de impressão: {printTime.toFixed(1)} h</p>
+                  {dueDate && <p>Conclusão prevista: {dueDate}</p>}
+                  <p className="text-lg font-bold">Preço por unidade: € {unitPrice.toFixed(2)}</p>
+                  {/* Se quiser ver margem estimada internamente, pode descomentar:
+                  <p className="text-xs text-gray-500">
+                    Estimativa de custo (interno): € {((COST_PER_GRAM[material] ?? 0) * weight).toFixed(2)}
+                  </p>
+                  */}
                 </div>
 
                 <div>
-                  <label className="block font-medium">Quantity:</label>
+                  <label className="block font-medium">Quantidade:</label>
                   <input
                     type="number"
                     min={1}
                     step={1}
                     value={quantity}
-                    onChange={e => {
-                      const v = Math.max(1, Number(e.target.value) || 1);
-                      setQuantity(v);
-                    }}
+                    onChange={e => setQuantity(Math.max(1, Number(e.target.value) || 1))}
                     className="w-full p-2 border rounded"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    Orders of 1–9 items: minimum €10 per item. From 10+ items: no minimum price.
+                    1–9 unidades: mínimo 10 € por peça. A partir de 10 unidades: sem mínimo.
                   </p>
                 </div>
 
@@ -390,7 +405,7 @@ export default function StlPriceCalculator() {
                   disabled={sending}
                   className="mt-4 w-full bg-blue-600 text-white p-3 rounded shadow"
                 >
-                  {sending ? 'Sending Order...' : 'Place Order'}
+                  {sending ? 'A enviar…' : 'Enviar encomenda'}
                 </button>
               </div>
             </div>
