@@ -26,9 +26,9 @@ const LAYER_HEIGHT_OPTIONS = [0.1, 0.15, 0.2, 0.3];
 // Цены для расчета
 const PRICE_PER_GRAM = {
   // FDM
-  PLA: 0.265,
-  ABS: 0.265,
-  PETG: 0.265,
+  PLA: 0.08,
+  ABS: 0.08,
+  PETG: 0.08,
   // SLA
   'Plant based': 1.05,
   'Translucent': 1.3125, // 25% дороже
